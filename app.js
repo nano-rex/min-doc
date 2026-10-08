@@ -28,7 +28,7 @@
     redo: [],
   };
 
-  let views = []; // { page, el, sheet, canvas, svg, fields, token, task, key }
+  let views = []; // { page, el, sheet, canvas, svg, text, fields, token, task, key }
   let saveProblems = [];
   let drag = null;
   let editor = null;
@@ -239,6 +239,7 @@
       pv.visible = entry.isIntersecting;
       if (pv.visible) {
         renderPage(pv);
+        buildText(pv).catch(fail);
         buildFields(pv).catch(fail);
       } else {
         // Free the bitmap of pages far from the viewport.
@@ -291,7 +292,11 @@
       el.append(bar, sheet);
       el.dataset.tool = state.tool;
       pagesEl.append(el);
-      const pv = { page: p, el, sheet, canvas, svg, fields: null, token: 0, task: null, key: null, visible: false };
+      const pv = { page: p, el, sheet, canvas, svg, text: null, fields: null, token: 0, task: null, key: null, visible: false };
+      // In Select mode clicks on empty page area go to the text below the overlay.
+      sheet.addEventListener('pointerdown', (e) => {
+        if (state.selected && !e.composedPath().includes(pv.svg)) { state.selected = null; redraw(); }
+      });
       svg.addEventListener('pointerdown', (e) => onPointerDown(e, pv));
       svg.addEventListener('pointermove', (e) => onPointerMove(e, pv));
       svg.addEventListener('pointerup', (e) => onPointerUp(e, pv));
@@ -333,6 +338,35 @@
       if (token === pv.token) pv.key = null;
       fail(err);
     }
+  }
+
+  // Invisible text over the page image, so the text of the PDF can be selected and copied.
+  async function buildText(pv) {
+    const p = pv.page;
+    if (pv.text || p.src === null) return;
+    pv.text = document.createElement('div');
+    pv.text.className = 'textLayer';
+    pv.sheet.insertBefore(pv.text, pv.svg);
+    const page = await state.sources[p.src].pdf.getPage(p.index + 1);
+    const viewport = page.getViewport({ scale: state.scale, rotation: totalRot(p) });
+    pv.text.style.setProperty('--scale-factor', viewport.scale);
+    await pdfjsLib.renderTextLayer({ textContentSource: page.streamTextContent(), container: pv.text, viewport }).promise;
+    // While dragging, a backdrop takes the pointer between lines. Without it the
+    // selection jumps to the end of the page whenever the pointer leaves a line.
+    const end = document.createElement('div');
+    end.className = 'endOfContent';
+    pv.text.append(end);
+    pv.text.addEventListener('mousedown', (e) => {
+      if (e.target !== pv.text && getComputedStyle(end).getPropertyValue('-moz-user-select') !== 'none') {
+        const box = pv.text.getBoundingClientRect();
+        end.style.top = `${(Math.max(0, (e.clientY - box.top) / box.height) * 100).toFixed(2)}%`;
+      }
+      end.classList.add('active');
+      document.addEventListener('mouseup', () => {
+        end.style.top = '';
+        end.classList.remove('active');
+      }, { once: true });
+    });
   }
 
   // ---------- form fields of the PDF ----------

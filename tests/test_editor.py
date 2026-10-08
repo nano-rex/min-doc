@@ -131,6 +131,18 @@ def run(page):
     page.wait_for_function("document.querySelector('.sheet canvas').width > 100")
     check(page.locator("#save").is_enabled(), "save is enabled after opening")
 
+    # The text of the PDF can be selected, also on the page that is rotated in the file.
+    box = sheet_box(page, 0)
+    page.mouse.dblclick(box["x"] + 80, box["y"] + 62)
+    check(page.evaluate("getSelection().toString().trim()") == "First", "double-click selects a word of the PDF text")
+    page.locator(".page").nth(1).scroll_into_view_if_needed()
+    page.locator(".page").nth(1).locator(".textLayer span").first.wait_for(state="attached")
+    span = page.locator(".page").nth(1).locator(".textLayer span").first.bounding_box()
+    sheet = sheet_box(page, 1)
+    check(span["height"] > span["width"] and span["x"] > sheet["x"] + sheet["width"] * 0.8, "selectable text follows the rotated page")
+    page.locator(".page").nth(0).scroll_into_view_if_needed()
+    page.mouse.click(box["x"] + 300, box["y"] + 300)
+
     # The form fields of the PDF are filled in place, in Select and in Text mode.
     fields = page.locator(".page").nth(0).locator(".fields > *")
     fields.first.wait_for()

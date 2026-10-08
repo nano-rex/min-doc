@@ -180,8 +180,12 @@ input[type="color"] {
 }
 
 .overlay.tool-select {
-  cursor: default;
-  touch-action: auto;
+  pointer-events: none;
+}
+
+.overlay.tool-select [data-id],
+.overlay.tool-select .handle {
+  pointer-events: auto;
 }
 
 .overlay.tool-select [data-id] {
@@ -214,6 +218,57 @@ input[type="color"] {
   fill: #2563eb;
   cursor: nwse-resize;
   touch-action: none;
+}
+
+/* Selectable text of the PDF. pdf.js sizes and places the spans. */
+.textLayer {
+  position: absolute;
+  left: 0;
+  top: 0;
+  /* Own stacking level, so the backdrop below the spans stays above the page image. */
+  z-index: 0;
+  overflow: hidden;
+  line-height: 1;
+  transform-origin: 0 0;
+  text-size-adjust: none;
+  forced-color-adjust: none;
+}
+
+.textLayer span,
+.textLayer br {
+  position: absolute;
+  color: transparent;
+  white-space: pre;
+  cursor: text;
+  transform-origin: 0% 0%;
+}
+
+.textLayer .endOfContent {
+  position: absolute;
+  inset: 100% 0 0;
+  z-index: -1;
+  cursor: default;
+  user-select: none;
+}
+
+.textLayer .endOfContent.active {
+  top: 0;
+}
+
+.textLayer ::selection {
+  background: rgba(37, 99, 235, 0.3);
+}
+
+.textLayer[data-main-rotation="90"] {
+  transform: rotate(90deg) translateY(-100%);
+}
+
+.textLayer[data-main-rotation="180"] {
+  transform: rotate(180deg) translate(-100%, -100%);
+}
+
+.textLayer[data-main-rotation="270"] {
+  transform: rotate(270deg) translateX(-100%);
 }
 
 .fields {
