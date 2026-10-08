@@ -1,0 +1,72 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>min-doc</title>
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <header class="toolbar">
+    <div class="group">
+      <button id="open" title="Open a PDF (Ctrl+O)">Open</button>
+      <button id="append" title="Add the pages of another PDF at the end" disabled>Add PDF</button>
+      <button id="save" class="primary" title="Download the edited PDF (Ctrl+S)" disabled>Save</button>
+    </div>
+    <div class="group tools" role="radiogroup" aria-label="Tool">
+      <button data-tool="select" class="active" title="Select, move, resize (Esc)">Select</button>
+      <button data-tool="text" title="Click on a page to type text">Text</button>
+      <button data-tool="draw" title="Freehand pen">Draw</button>
+      <button data-tool="highlight" title="Drag to highlight an area">Highlight</button>
+      <button data-tool="whiteout" title="Drag to cover an area with white">Whiteout</button>
+      <button id="image" title="Place a PNG or JPEG image, such as a signature">Image</button>
+    </div>
+    <div class="group">
+      <label title="Color"><input type="color" id="color" value="#000000"></label>
+      <label title="Text size in points">Size <input type="number" id="size" min="4" max="200" value="14"></label>
+      <label title="Pen width in points">Pen <input type="number" id="pen" min="0.5" max="40" step="0.5" value="2"></label>
+    </div>
+    <div class="group">
+      <button id="undo" title="Undo (Ctrl+Z)" disabled>Undo</button>
+      <button id="redo" title="Redo (Ctrl+Y)" disabled>Redo</button>
+      <button id="delete" title="Delete the selected item (Del)" disabled>Delete</button>
+    </div>
+    <div class="group">
+      <button id="zoom-out" title="Zoom out">&minus;</button>
+      <span id="zoom-label">125%</span>
+      <button id="zoom-in" title="Zoom in">+</button>
+      <button id="zoom-fit" title="Fit page width">Fit</button>
+    </div>
+    <div class="group">
+      <label>Page <input type="number" id="page-no" min="1" value="1" disabled></label>
+      <span id="page-count">/ 0</span>
+    </div>
+  </header>
+
+  <main id="viewer">
+    <div id="empty">
+      <p><strong>min-doc</strong></p>
+      <p>Open a PDF or drop one here to view and edit it.</p>
+      <p class="hint">Everything runs in this browser. No file leaves your device.</p>
+    </div>
+    <div id="pages"></div>
+  </main>
+
+  <div id="status" role="status" hidden></div>
+
+  <input type="file" id="file-open" accept="application/pdf,.pdf" hidden>
+  <input type="file" id="file-append" accept="application/pdf,.pdf" hidden>
+  <input type="file" id="file-image" accept="image/*" hidden>
+
+  <script src="vendor/pdfjs/pdf.min.js"></script>
+  <script>
+    // Browsers refuse to start a worker from a file:// page, so load the
+    // worker code here and let pdf.js run it on the main thread instead.
+    if (location.protocol === 'file:') {
+      document.write('<script src="vendor/pdfjs/pdf.worker.min.js"><\/script>');
+    }
+  </script>
+  <script src="vendor/pdf-lib/pdf-lib.min.js"></script>
+  <script src="app.js"></script>
+</body>
+</html>
