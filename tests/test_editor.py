@@ -31,6 +31,19 @@ async () => {
     page.drawText(word + ' page', { x: 40, y: 440, size: 28, font });
     if (i === 1) page.setRotation(degrees(90));
   });
+  // Form fields at the bottom of the first page.
+  const first = doc.getPage(0);
+  const form = doc.getForm();
+  const name = form.createTextField('person.name');
+  name.setText('old name');
+  name.addToPage(first, { x: 40, y: 90, width: 150, height: 20 });
+  form.createCheckBox('agree').addToPage(first, { x: 40, y: 60, width: 15, height: 15 });
+  const color = form.createDropdown('color');
+  color.addOptions(['Red', 'Green', 'Blue']);
+  color.addToPage(first, { x: 40, y: 30, width: 150, height: 20 });
+  const size = form.createRadioGroup('size');
+  size.addOptionToPage('small', first, { x: 220, y: 60, width: 15, height: 15 });
+  size.addOptionToPage('large', first, { x: 250, y: 60, width: 15, height: 15 });
   return Array.from(await doc.save());
 }
 """
@@ -42,9 +55,21 @@ async (bytes) => {
   for (let i = 1; i <= pdf.numPages; i++) {
     const page = await pdf.getPage(i);
     const content = await page.getTextContent();
-    pages.push({ rotate: page.rotate, text: content.items.map((item) => item.str).join(' ') });
+    const fields = {};
+    for (const a of await page.getAnnotations()) {
+      if (a.subtype === 'Widget') fields[a.fieldName] = a.fieldValue;
+    }
+    pages.push({ rotate: page.rotate, text: content.items.map((item) => item.str).join(' '), fields });
   }
-  return pages;
+  const lib = await PDFLib.PDFDocument.load(new Uint8Array(bytes));
+  const form = lib.getForm();
+  return {
+    pages,
+    fillable: form.getFields().map((field) => field.getName()).sort(),
+    name: form.getTextField('person.name').getText(),
+    agree: form.getCheckBox('agree').isChecked(),
+    size: form.getRadioGroup('size').getSelected(),
+  };
 }
 """
 
@@ -105,6 +130,24 @@ def run(page):
     check(page.locator(".page").count() == 3, "three pages are shown")
     page.wait_for_function("document.querySelector('.sheet canvas').width > 100")
     check(page.locator("#save").is_enabled(), "save is enabled after opening")
+
+    # The form fields of the PDF are filled in place, in Select and in Text mode.
+    fields = page.locator(".page").nth(0).locator(".fields > *")
+    fields.first.wait_for()
+    check(fields.count() == 5, "the five form widgets of page 1 are editable")
+    name = page.locator("[data-field='person.name']")
+    check(name.input_value() == "old name", "a text field shows its current value")
+    page.click("[data-tool=text]")
+    name.click()
+    name.fill("Ada Lovelace")
+    check(objects(page)[0] == [], "clicking a field with the Text tool edits the field, not a new text item")
+    page.click("[data-tool=select]")
+    page.locator("[data-field=agree]").check()
+    page.locator("[data-field=color]").select_option("Green")
+    radios = page.locator("[data-field=size]")
+    radios.nth(0).check()
+    radios.nth(1).check()
+    check(not radios.nth(0).is_checked(), "radio buttons of one group exclude each other")
 
     # Page 1: text, pen, highlight, whiteout.
     type_text(page, 0, (60, 150), "Hello min-doc")
@@ -179,7 +222,8 @@ def run(page):
     raw = saved.read_bytes()
     check(raw.startswith(b"%PDF-"), "saved file is a PDF")
 
-    result = page.evaluate(READ_PDF, list(raw))
+    read = page.evaluate(READ_PDF, list(raw))
+    result = read["pages"]
     check(len(result) == 5, "saved file has five pages")
     check([p["rotate"] for p in result] == [90, 0, 0, 90, 0], "page rotations are kept")
     check("Third page" in result[0]["text"], "moved page comes first")
@@ -187,6 +231,10 @@ def run(page):
     check("First page" in result[2]["text"] and "Hello min-doc" in result[2]["text"], "added text is real text in the file")
     check("Second page" in result[3]["text"] and "Rotated note" in result[3]["text"], "text on the rotated page is saved")
     check("First page" in result[4]["text"], "merged page is kept")
+    check(read["fillable"] == ["agree", "color", "person.name", "size"], "the form fields are still fillable fields")
+    check(read["name"] == "Ada Lovelace" and read["agree"] and read["size"] == "large", "the new field values are saved")
+    check(result[2]["fields"].get("color") == ["Green"], "the dropdown choice is saved on the moved page")
+    check(result[4]["fields"] == {}, "the merged copy of the form page has no clashing fields")
 
     # Open the saved file in the editor again to compare by eye.
     page.evaluate("(b) => { minDoc.state.dirty = false; return minDoc.loadPdf('out.pdf', new Uint8Array(b), false); }", list(raw))

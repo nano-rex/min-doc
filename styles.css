@@ -216,6 +216,35 @@ input[type="color"] {
   touch-action: none;
 }
 
+.fields {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+}
+
+.fields > * {
+  position: absolute;
+  margin: 0;
+  padding: 0 2px;
+  border: 0;
+  border-radius: 0;
+  background: rgba(0, 54, 255, 0.13);
+  color: #000000;
+  font-family: Helvetica, Arial, sans-serif;
+  resize: none;
+}
+
+.fields > :focus {
+  outline: 2px solid #2563eb;
+  background: #ffffff;
+}
+
+/* Fields take clicks in Select and Text; the other tools draw over them. */
+.page[data-tool="select"] .fields > *,
+.page[data-tool="text"] .fields > * {
+  pointer-events: auto;
+}
+
 .text-editor {
   position: absolute;
   min-width: 2em;

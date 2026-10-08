@@ -15,6 +15,7 @@ View:
 
 Edit:
 
+- **Form fields**: text boxes, checkboxes, radio buttons, dropdowns, and lists that the PDF already has are filled in place. Click a field with Select or Text and type. They stay real, fillable fields in the saved file.
 - **Text**: click on a page and type. Double-click existing added text to change it.
 - **Draw**: freehand pen with a chosen color and width.
 - **Highlight**: drag over an area to mark it in translucent color.
@@ -34,10 +35,11 @@ Shortcuts: `Ctrl+O` open, `Ctrl+S` save, `Ctrl+Z` undo, `Ctrl+Y` redo, `Del` del
 
 ## Limits
 
-- Text already in the PDF cannot be changed in place. Cover it with Whiteout and type over it.
+- Ordinary page text (not a form field) cannot be changed in place. Cover it with Whiteout and type over it.
 - Whiteout hides content but does not remove it from the file. Do not use it to redact secrets.
 - Added text in Latin characters is saved as real, selectable text. Text in other scripts (Chinese, Japanese, Korean, and so on) is saved as an image of the text.
-- Bookmarks and fillable form fields of the original are not carried into the saved file.
+- The first PDF you open keeps its form fields, bookmarks, and properties. Pages added with **Add PDF** get their form values printed on the page and are no longer fillable.
+- Form field changes are not part of undo/redo. Signature fields and push buttons are not editable.
 - Encrypted PDFs can be viewed but not saved.
 - When opened straight from disk (`file://`), PDFs that use non-embedded CJK fonts may show missing glyphs, because browsers block the character map files there. Serving the folder over HTTP avoids this, for example `python3 -m http.server`.
 
