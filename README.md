@@ -11,6 +11,7 @@ Open `index.html` in a browser (double-click it, or serve the folder with any st
 View:
 
 - Continuous scrolling, zoom in/out, fit to width, jump to a page.
+- Select and copy the text of the PDF: with the Select tool, drag over text, or double-click a word.
 - Password-protected PDFs can be viewed after entering the password.
 
 Edit:
