@@ -416,7 +416,8 @@
       el.style.top = `${Math.min(c1.y, c2.y) * state.scale}px`;
       el.style.width = `${w * state.scale}px`;
       el.style.height = `${h * state.scale}px`;
-      const auto = a.multiLine || el.size > 1 ? 10 : Math.min(12, Math.max(6, h * 0.65));
+      // Auto sized fields are saved with text that fills the field height.
+      const auto = a.multiLine || el.size > 1 ? 10 : Math.max(6, h * 0.75);
       const size = (a.defaultAppearanceData && a.defaultAppearanceData.fontSize) || auto;
       el.style.fontSize = `${size * state.scale}px`;
       pv.fields.append(el);
